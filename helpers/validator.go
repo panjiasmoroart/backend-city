@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 )
 
@@ -65,8 +67,12 @@ func extractDuplicateField(errMsg string) string {
 	re := regexp.MustCompile(`for key '(\w+\.)?(\w+)'`)
 	matches := re.FindStringSubmatch(errMsg)
 	if len(matches) == 3 {
-		// Hasilkan kapitalisasi nama field
-		return strings.Title(matches[2])
+		// Hasilkan kapitalisasi nama field # strings.Title deprecated
+		// return strings.Title(matches[2])
+
+		// Title-case  untuk Unicode
+		c := cases.Title(language.English)
+		return c.String(matches[2])
 	}
 	return ""
 }
