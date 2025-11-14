@@ -2,6 +2,7 @@ package database
 
 import (
 	"backend-city/config"
+	"backend-city/models"
 	"fmt"
 	"log"
 
@@ -12,6 +13,7 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
+
 	// Load konfigurasi database dari .env
 	dbUser := config.GetEnv("DB_USER", "root")
 	dbPass := config.GetEnv("DB_PASS", "")
@@ -31,4 +33,12 @@ func InitDB() {
 	}
 
 	fmt.Println("Database connected successfully!")
+
+	// **Auto Migrate Models**
+	err = DB.AutoMigrate(&models.User{}, &models.Role{}, &models.Permission{}, &models.Category{}, &models.Post{}, &models.Slider{}, &models.Page{}, &models.Photo{}, &models.Aparatur{}, &models.Product{}) // Tambahkan model lain jika perlu
+	if err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
+
+	fmt.Println("Database migrated successfully!")
 }
