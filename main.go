@@ -4,8 +4,7 @@ import (
 	"backend-city/config"
 	"backend-city/database"
 	"backend-city/database/seeders"
-
-	"github.com/gin-gonic/gin"
+	"backend-city/routes"
 )
 
 func main() {
@@ -18,18 +17,9 @@ func main() {
 	//run seeders
 	seeders.Seed()
 
-	//inisialiasai Gin
-	router := gin.Default()
-
-	//membuat route dengan method GET
-	router.GET("/", func(c *gin.Context) {
-
-		//return response JSON
-		c.JSON(200, gin.H{
-			"message": "Hello World!",
-		})
-	})
+	//setup router
+	r := routes.SetupRouter()
 
 	//mulai server
-	router.Run(":" + config.GetEnv("APP_PORT", "3000"))
+	r.Run(":" + config.GetEnv("APP_PORT", "3000"))
 }
