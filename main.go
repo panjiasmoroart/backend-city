@@ -3,6 +3,7 @@ package main
 import (
 	"backend-city/config"
 	"backend-city/database"
+	"backend-city/database/seeders"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +14,9 @@ func main() {
 
 	//inisialisasi database
 	database.InitDB()
+
+	//run seeders
+	seeders.Seed()
 
 	//inisialiasai Gin
 	router := gin.Default()
