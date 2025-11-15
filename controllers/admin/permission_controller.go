@@ -42,3 +42,37 @@ func FindPermissions(c *gin.Context) {
 	// Response JSON dengan pagination
 	helpers.PaginateResponse(c, permissions, total, page, limit, baseURL, search, "List Data Permissions")
 }
+
+// Buat permission baru
+func CreatePermission(c *gin.Context) {
+	var req structs.PermissionCreateRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	permission := models.Permission{
+		Name: req.Name,
+	}
+
+	if err := database.DB.Create(&permission).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to create permission",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, structs.SuccessResponse{
+		Success: true,
+		Message: "Permission created successfully",
+		Data:    permission,
+	})
+
+}
