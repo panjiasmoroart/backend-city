@@ -76,3 +76,29 @@ func CreatePermission(c *gin.Context) {
 	})
 
 }
+
+// Ambil 1 permission berdasarkan ID
+func FindPermissionById(c *gin.Context) {
+
+	// Ambil ID dari parameter
+	id := c.Param("id")
+
+	// variable permission
+	var permission models.Permission
+
+	// Ambil permission berdasarkan ID
+	if err := database.DB.First(&permission, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Permission not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Permission Found",
+		Data:    permission,
+	})
+}
