@@ -190,3 +190,20 @@ func DeletePermission(c *gin.Context) {
 	})
 
 }
+
+// Mengambil semua permissions
+func FindAllPermissions(c *gin.Context) {
+
+	// Inisialisasi slice untuk menampung data permissions
+	var permissions []models.Permission
+
+	// Ambil data permissions dari database
+	database.DB.Find(&permissions)
+
+	// Kirimkan response sukses dengan data user
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Lists Data Permissions",
+		Data:    permissions,
+	})
+}
