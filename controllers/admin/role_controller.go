@@ -99,3 +99,48 @@ func CreateRole(c *gin.Context) {
 		Data:    role,
 	})
 }
+
+func FindRoleById(c *gin.Context) {
+	// Ambil parameter ID dari URL
+	id := c.Param("id")
+
+	// Inisialisasi variable
+	var role models.Role
+
+	// Ambil data role beserta relasi permissions
+	if err := database.DB.Preload("Permissions").First(&role, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Role not found",
+		})
+		return
+	}
+
+	// Mapping relasi permissions ke bentuk response
+	permissionResponses := []structs.PermissionResponse{}
+	for _, permission := range role.Permissions {
+		permissionResponses = append(permissionResponses, structs.PermissionResponse{
+			Id:        permission.Id,
+			Name:      permission.Name,
+			CreatedAt: permission.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: permission.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+
+	}
+
+	// Siapkan response akhir
+	roleResponse := structs.RoleResponse{
+		Id:          role.Id,
+		Name:        role.Name,
+		Permissions: permissionResponses,
+		CreatedAt:   role.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:   role.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+
+	// Kirim response JSON
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Role found",
+		Data:    roleResponse,
+	})
+}
