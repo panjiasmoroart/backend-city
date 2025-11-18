@@ -237,3 +237,47 @@ func UpdateUser(c *gin.Context) {
 		},
 	})
 }
+
+func DeleteUser(c *gin.Context) {
+	// Ambil ID user dari parameter URL
+	id := c.Param("id")
+
+	// Inisialisasi user
+	var user models.User
+
+	// Cari user berdasarkan ID
+	if err := database.DB.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "User not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus semua relasi user<->role di pivot table
+	if err := database.DB.Table("user_roles").Where("user_id = ?", id).Delete(nil).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to detach user from roles",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus user dari database
+	if err := database.DB.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete user",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirimkan response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "User deleted successfully",
+	})
+}
