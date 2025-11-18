@@ -71,3 +71,57 @@ func FindUsers(c *gin.Context) {
 	// Kirim response dengan struktur pagination
 	helpers.PaginateResponse(c, usersResponse, total, page, limit, baseURL, search, "List Data Users")
 }
+
+func CreateUser(c *gin.Context) {
+	// struct user request
+	var req = structs.UserCreateRequest{}
+
+	// Bind JSON request ke struct UserCreateRequest + validasi
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Ambil daftar role berdasarkan role_ids (jika dikirim)
+	var roles []models.Role
+	if len(req.RoleIDs) > 0 {
+		database.DB.Where("id IN ?", req.RoleIDs).Find(&roles)
+	}
+
+	// Inisialisasi user baru
+	user := models.User{
+		Name:     req.Name,
+		Username: req.Username,
+		Email:    req.Email,
+		Password: helpers.HashPassword(req.Password),
+		Roles:    roles,
+	}
+
+	// Simpan user ke database
+	if err := database.DB.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to create user",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirimkan response sukses (mapping ke UserResponse agar konsisten)
+	c.JSON(http.StatusCreated, structs.SuccessResponse{
+		Success: true,
+		Message: "User created successfully",
+		Data: structs.UserResponse{
+			Id:        user.Id,
+			Name:      user.Name,
+			Username:  user.Username,
+			Email:     user.Email,
+			CreatedAt: user.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: user.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
