@@ -192,3 +192,49 @@ func UpdateRole(c *gin.Context) {
 		Data:    role,
 	})
 }
+
+// Hapus role
+func DeleteRole(c *gin.Context) {
+	// Ambil ID dari parameter
+	id := c.Param("id")
+
+	// Inisialisasi variable
+	var role models.Role
+
+	// Ambil data role
+	if err := database.DB.First(&role, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Role not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus seluruh relasi role<->permission di pivot table
+	if err := database.DB.Model(&role).Association("Permissions").Clear(); err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to detach role from permissions",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus role
+	if err := database.DB.Delete(&role).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete role",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim response
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Role deleted successfully",
+	})
+
+}
