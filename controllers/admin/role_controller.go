@@ -238,3 +238,20 @@ func DeleteRole(c *gin.Context) {
 	})
 
 }
+
+// Mengambil semua roles
+func FindAllRoles(c *gin.Context) {
+
+	// Inisialisasi slice untuk menampung data roles
+	var roles []models.Role
+
+	// Ambil data roles dari database
+	database.DB.Find(&roles)
+
+	// Kirimkan response sukses dengan data user
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Lists Data Roles",
+		Data:    roles,
+	})
+}
