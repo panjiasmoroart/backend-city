@@ -170,3 +170,70 @@ func FindUserById(c *gin.Context) {
 		},
 	})
 }
+
+func UpdateUser(c *gin.Context) {
+	// Ambil ID user dari parameter URL
+	id := c.Param("id")
+
+	// Inisialisasi user
+	var user models.User
+
+	// Cari user berdasarkan ID
+	if err := database.DB.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "User not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	//struct user request
+	var req = structs.UserUpdateRequest{}
+
+	// Bind JSON request ke struct UserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Update user dengan data baru
+	user.Name = req.Name
+	user.Username = req.Username
+	user.Email = req.Email
+	user.Password = helpers.HashPassword(req.Password)
+
+	var roles []models.Role
+	if len(req.RoleIDs) > 0 {
+		database.DB.Where("id IN ?", req.RoleIDs).Find(&roles)
+	}
+	database.DB.Model(&user).Association("Roles").Replace(&roles)
+
+	// Simpan perubahan ke database
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to update user",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirimkan response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "User updated successfully",
+		Data: structs.UserResponse{
+			Id:        user.Id,
+			Name:      user.Name,
+			Username:  user.Username,
+			Email:     user.Email,
+			CreatedAt: user.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: user.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
