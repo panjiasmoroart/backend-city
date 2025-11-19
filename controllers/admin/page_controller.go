@@ -133,3 +133,38 @@ func CreatePage(c *gin.Context) {
 		},
 	})
 }
+
+// FindPageById - Menampilkan detail halaman berdasarkan ID
+func FindPageById(c *gin.Context) {
+
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi page
+	var page models.Page
+
+	// Cari data halaman berdasarkan ID
+	if err := database.DB.First(&page, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Page not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim respon sukses dengan data
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Page found",
+		Data: structs.PageResponse{
+			Id:        page.Id,
+			Title:     page.Title,
+			Slug:      page.Slug,
+			Content:   page.Content,
+			UserID:    page.UserId,
+			CreatedAt: page.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: page.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
