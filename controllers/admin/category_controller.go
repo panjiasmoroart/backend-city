@@ -117,3 +117,56 @@ func FindCategoryById(c *gin.Context) {
 		Data:    category,
 	})
 }
+
+// Memperbarui data kategori
+func UpdateCategory(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi category
+	var category models.Category
+
+	// Cek apakah kategori dengan ID tersebut ada
+	if err := database.DB.First(&category, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Category not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// struct category update request
+	var req structs.CategoryUpdateRequest
+
+	// Validasi input
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Perbarui data
+	category.Name = req.Name
+	category.Slug = helpers.Slugify(req.Name)
+
+	// Simpan perubahan ke database
+	if err := database.DB.Save(&category).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to update category",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Category updated successfully",
+		Data:    category,
+	})
+}
