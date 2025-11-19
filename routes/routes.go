@@ -60,6 +60,7 @@ func SetupRouter() *gin.Engine {
 		// Post routes
 		protected.GET("/posts", middlewares.Permission("posts-index"), adminController.FindPosts)
 		protected.POST("/posts", middlewares.Permission("posts-create"), adminController.CreatePost)
+		protected.GET("/posts/:id", middlewares.Permission("posts-show"), adminController.FindPostById)
 	}
 
 	return router

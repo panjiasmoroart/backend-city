@@ -165,3 +165,39 @@ func CreatePost(c *gin.Context) {
 	})
 
 }
+
+// Mengambil detail post berdasarkan ID
+func FindPostById(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi post
+	var post models.Post
+
+	// Cari post dan preload relasi
+	if err := database.DB.Preload("Category").Preload("User").First(&post, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Post not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim data post
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Post found",
+		Data: structs.PostResponse{
+			Id:         post.Id,
+			Image:      post.Image,
+			Title:      post.Title,
+			Slug:       post.Slug,
+			Content:    post.Content,
+			CategoryID: post.CategoryId,
+			UserID:     post.UserId,
+			CreatedAt:  post.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt:  post.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
