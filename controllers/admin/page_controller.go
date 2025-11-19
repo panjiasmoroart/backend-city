@@ -168,3 +168,65 @@ func FindPageById(c *gin.Context) {
 		},
 	})
 }
+
+// UpdatePage - Memperbarui data halaman
+func UpdatePage(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi page
+	var page models.Page
+
+	// Pastikan data halaman ada
+	if err := database.DB.First(&page, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Page not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Inisialisasi struct updaterequest
+	var req structs.PageUpdateRequest
+
+	// Validasi input
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Perbarui field
+	page.Title = req.Title
+	page.Slug = helpers.Slugify(req.Title)
+	page.Content = req.Content
+
+	// Simpan perubahan ke database
+	if err := database.DB.Save(&page).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to update page",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim respon sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Page updated successfully",
+		Data: structs.PageResponse{
+			Id:        page.Id,
+			Title:     page.Title,
+			Slug:      page.Slug,
+			Content:   page.Content,
+			UserID:    page.UserId,
+			CreatedAt: page.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: page.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
