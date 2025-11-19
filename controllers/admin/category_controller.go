@@ -170,3 +170,38 @@ func UpdateCategory(c *gin.Context) {
 		Data:    category,
 	})
 }
+
+// Menghapus kategori berdasarkan ID
+func DeleteCategory(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi category
+	var category models.Category
+
+	// Cek apakah data kategori ditemukan
+	if err := database.DB.First(&category, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Category not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus data kategori
+	if err := database.DB.Delete(&category).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete category",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Category deleted successfully",
+	})
+}
