@@ -63,6 +63,9 @@ func SetupRouter() *gin.Engine {
 		protected.GET("/posts/:id", middlewares.Permission("posts-show"), adminController.FindPostById)
 		protected.PUT("/posts/:id", middlewares.Permission("posts-update"), adminController.UpdatePost)
 		protected.DELETE("/posts/:id", middlewares.Permission("posts-delete"), adminController.DeletePost)
+
+		// Page routes
+		protected.GET("/pages", middlewares.Permission("pages-index"), adminController.FindPages)
 	}
 
 	return router
