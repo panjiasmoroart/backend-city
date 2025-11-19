@@ -205,3 +205,20 @@ func DeleteCategory(c *gin.Context) {
 		Message: "Category deleted successfully",
 	})
 }
+
+// Mengambil semua kategori
+func FindAllCategories(c *gin.Context) {
+
+	// Inisialisasi slice untuk menampung data categories
+	var categories []models.Category
+
+	// Ambil data category dari database
+	database.DB.Find(&categories)
+
+	// Kirimkan response sukses dengan data category
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Lists Data Categories",
+		Data:    categories,
+	})
+}
