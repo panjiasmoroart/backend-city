@@ -66,6 +66,7 @@ func SetupRouter() *gin.Engine {
 
 		// Page routes
 		protected.GET("/pages", middlewares.Permission("pages-index"), adminController.FindPages)
+		protected.POST("/pages", middlewares.Permission("pages-create"), adminController.CreatePage)
 	}
 
 	return router
