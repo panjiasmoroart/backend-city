@@ -309,3 +309,57 @@ func UpdatePost(c *gin.Context) {
 		},
 	})
 }
+
+// Menghapus post berdasarkan ID
+func DeletePost(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi post
+	var post models.Post
+
+	// Cari data post
+	if err := database.DB.First(&post, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Post not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar untuk dihapus
+	imagePath := ""
+	if post.Image != "" {
+		imagePath = filepath.Join("public", "uploads", "posts", post.Image)
+	}
+
+	// Hapus data dari database
+	if err := database.DB.Delete(&post).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete post",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus file gambar jika ada
+	if imagePath != "" {
+		if err := os.Remove(imagePath); err != nil && !os.IsNotExist(err) {
+			// Gagal hapus gambar, tetapi post tetap dianggap berhasil dihapus
+			c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+				Success: false,
+				Message: "Post deleted but failed to remove image",
+				Errors:  map[string]string{"image": "Failed to remove image file: " + err.Error()},
+			})
+			return
+		}
+	}
+
+	// Kirim response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Post deleted successfully",
+	})
+}
