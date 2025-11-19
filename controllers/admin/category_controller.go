@@ -93,3 +93,27 @@ func CreateCategory(c *gin.Context) {
 		Data:    category,
 	})
 }
+
+// Mengambil satu kategori berdasarkan ID
+func FindCategoryById(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+	var category models.Category
+
+	// Cari kategori berdasarkan ID
+	if err := database.DB.First(&category, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Category not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim data kategori
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Category Found",
+		Data:    category,
+	})
+}
