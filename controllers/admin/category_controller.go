@@ -40,3 +40,56 @@ func FindCategories(c *gin.Context) {
 	// Kirim response dengan struktur pagination
 	helpers.PaginateResponse(c, categories, total, page, limit, baseURL, search, "List Data Categories")
 }
+
+// Menambahkan kategori baru
+func CreateCategory(c *gin.Context) {
+	var req structs.CategoryCreateRequest
+
+	// Validasi input
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Buat slug dari nama kategori
+	slug := helpers.Slugify(req.Name)
+
+	// Cek apakah slug sudah digunakan
+	var existing models.Category
+	if err := database.DB.Where("slug = ?", slug).First(&existing).Error; err == nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors: map[string]string{
+				"slug": "Slug already exists",
+			},
+		})
+		return
+	}
+
+	// Buat objek kategori
+	category := models.Category{
+		Name: req.Name,
+		Slug: slug,
+	}
+
+	// Simpan kategori
+	if err := database.DB.Create(&category).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to create category",
+		})
+		return
+	}
+
+	// Kirim response sukses
+	c.JSON(http.StatusCreated, structs.SuccessResponse{
+		Success: true,
+		Message: "Category created successfully",
+		Data:    category,
+	})
+}
