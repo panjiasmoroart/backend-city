@@ -6,6 +6,8 @@ import (
 	"backend-city/models"
 	"backend-city/structs"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -188,6 +190,112 @@ func FindPostById(c *gin.Context) {
 	c.JSON(http.StatusOK, structs.SuccessResponse{
 		Success: true,
 		Message: "Post found",
+		Data: structs.PostResponse{
+			Id:         post.Id,
+			Image:      post.Image,
+			Title:      post.Title,
+			Slug:       post.Slug,
+			Content:    post.Content,
+			CategoryID: post.CategoryId,
+			UserID:     post.UserId,
+			CreatedAt:  post.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt:  post.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
+
+// Memperbarui post berdasarkan ID
+func UpdatePost(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi post
+	var post models.Post
+
+	// Cari data post
+	if err := database.DB.First(&post, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Post not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Inisialisasi struct post request update
+	var req structs.PostUpdateRequest
+
+	// Bind request (multipart form-data)
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar lama (jika ada)
+	oldImagePath := ""
+	if post.Image != "" {
+		oldImagePath = filepath.Join("public", "uploads", "posts", post.Image)
+	}
+
+	// Jika user mengupload gambar baru
+	file, err := c.FormFile("image")
+	if err == nil {
+
+		// Upload gambar baru
+		uploadResult := helpers.UploadFile(c, helpers.UploadConfig{
+			File:           file,
+			AllowedTypes:   []string{".jpg", ".jpeg", ".png", ".gif"},
+			MaxSize:        10 << 20, // 10MB
+			DestinationDir: "public/uploads/posts",
+		})
+
+		// Jika upload gagal, kembalikan error
+		if uploadResult.Response != nil {
+			c.JSON(http.StatusBadRequest, uploadResult.Response)
+			return
+		}
+
+		// Set nama file baru
+		post.Image = uploadResult.FileName
+	}
+
+	// Perbarui field teks
+	post.Title = req.Title
+	post.Slug = helpers.Slugify(req.Title)
+	post.Content = req.Content
+	post.CategoryId = req.CategoryID
+
+	// Simpan perubahan ke DB
+	if err := database.DB.Save(&post).Error; err != nil {
+		// Jika save gagal dan ada file baru, hapus file baru agar tidak orphan
+		if file != nil && post.Image != "" {
+			newImagePath := filepath.Join("public", "uploads", "posts", post.Image)
+			os.Remove(newImagePath)
+		}
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to update post",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Jika ada file baru dan file lama masih ada, hapus gambar lama
+	if file != nil && oldImagePath != "" {
+		_ = os.Remove(oldImagePath)
+	}
+
+	// Muat ulang relasi untuk response
+	database.DB.Preload("Category").Preload("User").First(&post, post.Id)
+
+	// Response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Post updated successfully",
 		Data: structs.PostResponse{
 			Id:         post.Id,
 			Image:      post.Image,
