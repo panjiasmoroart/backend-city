@@ -115,3 +115,56 @@ func CreateSlider(c *gin.Context) {
 		Data:    slider,
 	})
 }
+
+// DeleteSlider - Menghapus data slider berdasarkan ID
+func DeleteSlider(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi struct
+	var slider models.Slider
+
+	// Cari data slider berdasarkan ID
+	if err := database.DB.First(&slider, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Slider not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar untuk dihapus
+	imagePath := ""
+	if slider.Image != "" {
+		imagePath = filepath.Join("public", "uploads", "sliders", slider.Image)
+	}
+
+	// Hapus data slider dari database
+	if err := database.DB.Delete(&slider).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete slider",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus file gambar jika ada
+	if imagePath != "" {
+		if err := os.Remove(imagePath); err != nil && !os.IsNotExist(err) {
+			c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+				Success: false,
+				Message: "Slider deleted but failed to remove image",
+				Errors:  map[string]string{"image": err.Error()},
+			})
+			return
+		}
+	}
+
+	// Kirim response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Slider deleted successfully",
+	})
+}
