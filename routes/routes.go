@@ -88,6 +88,8 @@ func SetupRouter() *gin.Engine {
 		protected.POST("/sliders", middlewares.Permission("sliders-create"), adminController.CreateSlider)
 		protected.DELETE("/sliders/:id", middlewares.Permission("sliders-delete"), adminController.DeleteSlider)
 
+		// Aparatur routes
+		protected.GET("/aparaturs", middlewares.Permission("aparaturs-index"), adminController.FindAparaturs)
 	}
 
 	return router
