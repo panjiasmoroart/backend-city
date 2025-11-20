@@ -85,6 +85,7 @@ func SetupRouter() *gin.Engine {
 
 		//Slider routes
 		protected.GET("/sliders", middlewares.Permission("sliders-index"), adminController.FindSliders)
+		protected.POST("/sliders", middlewares.Permission("sliders-create"), adminController.CreateSlider)
 
 	}
 
