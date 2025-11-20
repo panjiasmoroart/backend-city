@@ -116,3 +116,57 @@ func CreatePhoto(c *gin.Context) {
 		Data:    photo,
 	})
 }
+
+// DeletePhoto - Menghapus data foto berdasarkan ID
+func DeletePhoto(c *gin.Context) {
+
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi photo
+	var photo models.Photo
+
+	// Cari data foto berdasarkan ID
+	if err := database.DB.First(&photo, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Photo not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar untuk dihapus
+	imagePath := ""
+	if photo.Image != "" {
+		imagePath = filepath.Join("public", "uploads", "photos", photo.Image)
+	}
+
+	// Hapus data dari database
+	if err := database.DB.Delete(&photo).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete photo",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus file gambar dari server
+	if imagePath != "" {
+		if err := os.Remove(imagePath); err != nil && !os.IsNotExist(err) {
+			c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+				Success: false,
+				Message: "Photo deleted but failed to remove image",
+				Errors:  map[string]string{"image": err.Error()},
+			})
+			return
+		}
+	}
+
+	// Kembalikan response berhasil
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Photo deleted successfully",
+	})
+}
