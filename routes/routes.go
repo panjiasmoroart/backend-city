@@ -74,6 +74,7 @@ func SetupRouter() *gin.Engine {
 		// Product routes
 		protected.GET("/products", middlewares.Permission("products-index"), adminController.FindProducts)
 		protected.POST("/products", middlewares.Permission("products-create"), adminController.CreateProduct)
+		protected.GET("/products/:id", middlewares.Permission("products-show"), adminController.FindProductById)
 	}
 
 	return router

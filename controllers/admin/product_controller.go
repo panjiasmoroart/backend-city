@@ -170,3 +170,41 @@ func CreateProduct(c *gin.Context) {
 		},
 	})
 }
+
+// FindProductById - Ambil 1 produk berdasarkan ID
+func FindProductById(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi produk
+	var product models.Product
+
+	// Cari produk
+	if err := database.DB.First(&product, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Product not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim data produk
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Product found",
+		Data: structs.ProductResponse{
+			Id:        product.Id,
+			Title:     product.Title,
+			Slug:      product.Slug,
+			Content:   product.Content,
+			Image:     product.Image,
+			Owner:     product.Owner,
+			Price:     product.Price,
+			Address:   product.Address,
+			Phone:     product.Phone,
+			CreatedAt: product.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: product.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
