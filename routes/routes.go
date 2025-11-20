@@ -92,6 +92,7 @@ func SetupRouter() *gin.Engine {
 		protected.GET("/aparaturs", middlewares.Permission("aparaturs-index"), adminController.FindAparaturs)
 		protected.POST("/aparaturs", middlewares.Permission("aparaturs-create"), adminController.CreateAparatur)
 		protected.GET("/aparaturs/:id", middlewares.Permission("aparaturs-show"), adminController.FindAparaturById)
+		protected.PUT("/aparaturs/:id", middlewares.Permission("aparaturs-update"), adminController.UpdateAparatur)
 
 	}
 

@@ -6,6 +6,8 @@ import (
 	"backend-city/models"
 	"backend-city/structs"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -137,6 +139,91 @@ func FindAparaturById(c *gin.Context) {
 	c.JSON(http.StatusOK, structs.SuccessResponse{
 		Success: true,
 		Message: "Aparatur found",
+		Data:    aparatur,
+	})
+}
+
+// UpdateAparatur - Perbarui data aparatur berdasarkan ID
+func UpdateAparatur(c *gin.Context) {
+
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi aparatur
+	var aparatur models.Aparatur
+
+	// Cari data yang akan diperbarui
+	if err := database.DB.First(&aparatur, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Aparatur not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	var req structs.AparaturUpdateRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar lama jika ada
+	oldImagePath := ""
+	if aparatur.Image != "" {
+		oldImagePath = filepath.Join("public", "uploads", "aparaturs", aparatur.Image)
+	}
+
+	// Cek apakah ada gambar baru yang diupload
+	file, err := c.FormFile("image")
+	if err == nil {
+		uploadResult := helpers.UploadFile(c, helpers.UploadConfig{
+			File:           file,
+			AllowedTypes:   []string{".jpg", ".jpeg", ".png", ".gif"},
+			MaxSize:        10 << 20,
+			DestinationDir: "public/uploads/aparaturs",
+		})
+
+		if uploadResult.Response != nil {
+			c.JSON(http.StatusBadRequest, uploadResult.Response)
+			return
+		}
+
+		// Set gambar baru
+		aparatur.Image = uploadResult.FileName
+	}
+
+	// Perbarui data lainnya
+	aparatur.Name = req.Name
+	aparatur.Position = req.Position
+	aparatur.Description = req.Description
+
+	// Simpan ke database
+	if err := database.DB.Save(&aparatur).Error; err != nil {
+		// Hapus gambar baru jika penyimpanan gagal
+		if file != nil && aparatur.Image != "" {
+			os.Remove(filepath.Join("public", "uploads", "aparaturs", aparatur.Image))
+		}
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to update aparatur",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Jika ada file baru dan file lama masih ada, hapus gambar lama
+	if file != nil && oldImagePath != "" {
+		_ = os.Remove(oldImagePath)
+	}
+
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Aparatur updated successfully",
 		Data:    aparatur,
 	})
 }
