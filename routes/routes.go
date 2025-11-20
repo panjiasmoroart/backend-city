@@ -80,6 +80,7 @@ func SetupRouter() *gin.Engine {
 
 		//Photo routes
 		protected.GET("/photos", middlewares.Permission("photos-index"), adminController.FindPhotos)
+		protected.POST("/photos", middlewares.Permission("photos-create"), adminController.CreatePhoto)
 	}
 
 	return router
