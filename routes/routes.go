@@ -77,6 +77,9 @@ func SetupRouter() *gin.Engine {
 		protected.GET("/products/:id", middlewares.Permission("products-show"), adminController.FindProductById)
 		protected.PUT("/products/:id", middlewares.Permission("products-update"), adminController.UpdateProduct)
 		protected.DELETE("/products/:id", middlewares.Permission("products-delete"), adminController.DeleteProduct)
+
+		//Photo routes
+		protected.GET("/photos", middlewares.Permission("photos-index"), adminController.FindPhotos)
 	}
 
 	return router
