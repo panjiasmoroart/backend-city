@@ -78,10 +78,14 @@ func SetupRouter() *gin.Engine {
 		protected.PUT("/products/:id", middlewares.Permission("products-update"), adminController.UpdateProduct)
 		protected.DELETE("/products/:id", middlewares.Permission("products-delete"), adminController.DeleteProduct)
 
-		//Photo routes
+		// Photo routes
 		protected.GET("/photos", middlewares.Permission("photos-index"), adminController.FindPhotos)
 		protected.POST("/photos", middlewares.Permission("photos-create"), adminController.CreatePhoto)
 		protected.DELETE("/photos/:id", middlewares.Permission("photos-delete"), adminController.DeletePhoto)
+
+		//Slider routes
+		protected.GET("/sliders", middlewares.Permission("sliders-index"), adminController.FindSliders)
+
 	}
 
 	return router
