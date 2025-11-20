@@ -230,3 +230,39 @@ func UpdatePage(c *gin.Context) {
 		},
 	})
 }
+
+// DeletePage - Menghapus data halaman berdasarkan ID
+func DeletePage(c *gin.Context) {
+
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi page
+	var page models.Page
+
+	// Pastikan halaman tersedia
+	if err := database.DB.First(&page, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Page not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus data halaman dari database
+	if err := database.DB.Delete(&page).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete page",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim respon sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Page deleted successfully",
+	})
+}
