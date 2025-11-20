@@ -113,3 +113,30 @@ func CreateAparatur(c *gin.Context) {
 		Data:    aparatur,
 	})
 }
+
+// FindAparaturById - Ambil data aparatur berdasarkan ID
+func FindAparaturById(c *gin.Context) {
+
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi aparatur
+	var aparatur models.Aparatur
+
+	// Cari berdasarkan ID
+	if err := database.DB.First(&aparatur, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Aparatur not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim response sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Aparatur found",
+		Data:    aparatur,
+	})
+}
