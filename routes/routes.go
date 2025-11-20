@@ -70,6 +70,9 @@ func SetupRouter() *gin.Engine {
 		protected.GET("/pages/:id", middlewares.Permission("pages-show"), adminController.FindPageById)
 		protected.PUT("/pages/:id", middlewares.Permission("pages-update"), adminController.UpdatePage)
 		protected.DELETE("/pages/:id", middlewares.Permission("pages-delete"), adminController.DeletePage)
+
+		// Product routes
+		protected.GET("/products", middlewares.Permission("products-index"), adminController.FindProducts)
 	}
 
 	return router
