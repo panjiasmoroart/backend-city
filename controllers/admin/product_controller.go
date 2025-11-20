@@ -6,6 +6,8 @@ import (
 	"backend-city/models"
 	"backend-city/structs"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
@@ -193,6 +195,112 @@ func FindProductById(c *gin.Context) {
 	c.JSON(http.StatusOK, structs.SuccessResponse{
 		Success: true,
 		Message: "Product found",
+		Data: structs.ProductResponse{
+			Id:        product.Id,
+			Title:     product.Title,
+			Slug:      product.Slug,
+			Content:   product.Content,
+			Image:     product.Image,
+			Owner:     product.Owner,
+			Price:     product.Price,
+			Address:   product.Address,
+			Phone:     product.Phone,
+			CreatedAt: product.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: product.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
+
+// UpdateProduct - Perbarui data produk
+func UpdateProduct(c *gin.Context) {
+
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi produk
+	var product models.Product
+
+	// Cek apakah produk ada
+	if err := database.DB.First(&product, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Product not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Inisialisasi struct updaterequest
+	var req structs.ProductUpdateRequest
+
+	// Validasi input
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, structs.ErrorResponse{
+			Success: false,
+			Message: "Validation Errors",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar lama untuk dihapus
+	oldImagePath := ""
+	if product.Image != "" {
+		oldImagePath = filepath.Join("public", "uploads", "products", product.Image)
+	}
+
+	// Upload gambar baru jika ada
+	file, err := c.FormFile("image")
+	if err == nil {
+
+		// Upload gambar
+		uploadResult := helpers.UploadFile(c, helpers.UploadConfig{
+			File:           file,
+			AllowedTypes:   []string{".jpg", ".jpeg", ".png", ".gif"},
+			MaxSize:        10 << 20,
+			DestinationDir: "public/uploads/products",
+		})
+
+		// Jika error, kembalikan error
+		if uploadResult.Response != nil {
+			c.JSON(http.StatusBadRequest, uploadResult.Response)
+			return
+		}
+
+		// Simpan nama gambar baru
+		product.Image = uploadResult.FileName
+	}
+
+	// buat objek product
+	product.Title = req.Title
+	product.Content = req.Content
+	product.Owner = req.Owner
+	product.Price = req.Price
+	product.Address = req.Address
+	product.Phone = req.Phone
+
+	if err := database.DB.Save(&product).Error; err != nil {
+		// Jika error, hapus gambar baru jika ada
+		if file != nil && product.Image != "" {
+			os.Remove(filepath.Join("public", "uploads", "products", product.Image))
+		}
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to update product",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus gambar lama jika upload baru berhasil
+	if file != nil && oldImagePath != "" {
+		os.Remove(oldImagePath)
+	}
+
+	// Kirim data baru
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Product updated successfully",
 		Data: structs.ProductResponse{
 			Id:        product.Id,
 			Title:     product.Title,
