@@ -316,3 +316,56 @@ func UpdateProduct(c *gin.Context) {
 		},
 	})
 }
+
+// DeleteProduct - Hapus produk
+func DeleteProduct(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi produk
+	var product models.Product
+
+	// Cari produk
+	if err := database.DB.First(&product, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Product not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar untuk dihapus
+	imagePath := ""
+	if product.Image != "" {
+		imagePath = filepath.Join("public", "uploads", "products", product.Image)
+	}
+
+	// Hapus data dari database
+	if err := database.DB.Delete(&product).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete product",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus file gambar jika ada
+	if imagePath != "" {
+		if err := os.Remove(imagePath); err != nil && !os.IsNotExist(err) {
+			c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+				Success: false,
+				Message: "Product deleted, but failed to delete image",
+				Errors:  map[string]string{"image": err.Error()},
+			})
+			return
+		}
+	}
+
+	// Kirim respons sukses
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Product deleted successfully",
+	})
+}
