@@ -3,6 +3,7 @@ package routes
 import (
 	adminController "backend-city/controllers/admin"
 	authController "backend-city/controllers/auth"
+	publicController "backend-city/controllers/public"
 	"backend-city/middlewares"
 
 	"github.com/gin-gonic/gin"
@@ -94,6 +95,13 @@ func SetupRouter() *gin.Engine {
 		protected.GET("/aparaturs/:id", middlewares.Permission("aparaturs-show"), adminController.FindAparaturById)
 		protected.PUT("/aparaturs/:id", middlewares.Permission("aparaturs-update"), adminController.UpdateAparatur)
 		protected.DELETE("/aparaturs/:id", middlewares.Permission("aparaturs-delete"), adminController.DeleteAparatur)
+	}
+
+	// Public routes
+	public := router.Group("/api/public")
+	{
+		// Post routes
+		public.GET("/posts", publicController.FindPosts)
 	}
 
 	return router
