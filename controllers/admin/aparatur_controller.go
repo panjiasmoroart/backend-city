@@ -227,3 +227,56 @@ func UpdateAparatur(c *gin.Context) {
 		Data:    aparatur,
 	})
 }
+
+// DeleteAparatur - Hapus data aparatur
+func DeleteAparatur(c *gin.Context) {
+
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi aparatur
+	var aparatur models.Aparatur
+
+	// Cari aparatur berdasarkan ID
+	if err := database.DB.First(&aparatur, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Aparatur not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Simpan path gambar untuk dihapus nanti
+	imagePath := ""
+	if aparatur.Image != "" {
+		imagePath = filepath.Join("public", "uploads", "aparaturs", aparatur.Image)
+	}
+
+	// Hapus data dari database
+	if err := database.DB.Delete(&aparatur).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to delete aparatur",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Hapus file gambar jika ada
+	if imagePath != "" {
+		if err := os.Remove(imagePath); err != nil && !os.IsNotExist(err) {
+			c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+				Success: false,
+				Message: "Aparatur deleted but failed to remove image",
+				Errors:  map[string]string{"image": err.Error()},
+			})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Aparatur deleted successfully",
+	})
+}
