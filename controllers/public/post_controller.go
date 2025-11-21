@@ -113,3 +113,52 @@ func FindPostBySlug(c *gin.Context) {
 		},
 	})
 }
+
+// Menampilkan 6 post terbaru
+func FindPostsHome(c *gin.Context) {
+
+	// Inisialisasi slice
+	var posts []models.Post
+
+	// Ambil maksimal 5 post terbaru dengan preload Category dan User
+	err := database.DB.Preload("Category").Preload("User").
+		Order("id desc").Limit(6).Find(&posts).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to fetch posts",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Mapping ke struct response
+	postsResponse := []structs.PostWithRelationResponse{}
+	for _, post := range posts {
+		postsResponse = append(postsResponse, structs.PostWithRelationResponse{
+			Id:      post.Id,
+			Image:   post.Image,
+			Title:   post.Title,
+			Slug:    post.Slug,
+			Content: post.Content,
+			Category: structs.CategorySimpleResponse{
+				ID:   post.Category.Id,
+				Name: post.Category.Name,
+			},
+			User: structs.UserSimpleResponse{
+				ID:   post.User.Id,
+				Name: post.User.Name,
+			},
+			CreatedAt: post.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: post.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	// Kirim response
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "List Data Posts Home",
+		Data:    postsResponse,
+	})
+}
