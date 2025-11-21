@@ -102,6 +102,7 @@ func SetupRouter() *gin.Engine {
 	{
 		// Post routes
 		public.GET("/posts", publicController.FindPosts)
+		public.GET("/posts/:slug", publicController.FindPostBySlug)
 	}
 
 	return router

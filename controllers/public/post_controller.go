@@ -70,3 +70,46 @@ func FindPosts(c *gin.Context) {
 	// Kirim response
 	helpers.PaginateResponse(c, postsResponse, total, page, limit, baseURL, search, "List Data Posts")
 }
+
+// Mengambil detail post berdasarkan slug
+func FindPostBySlug(c *gin.Context) {
+
+	// Ambil parameter slug
+	slug := c.Param("slug")
+
+	// Inisialisasi post
+	var post models.Post
+
+	// Cari post dan preload relasi
+	if err := database.DB.Preload("Category").Preload("User").Where("slug = ?", slug).First(&post).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Post not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim data post
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Post found",
+		Data: structs.PostWithRelationResponse{
+			Id:      post.Id,
+			Image:   post.Image,
+			Title:   post.Title,
+			Slug:    post.Slug,
+			Content: post.Content,
+			Category: structs.CategorySimpleResponse{
+				ID:   post.Category.Id,
+				Name: post.Category.Name,
+			},
+			User: structs.UserSimpleResponse{
+				ID:   post.User.Id,
+				Name: post.User.Name,
+			},
+			CreatedAt: post.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: post.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
