@@ -62,3 +62,40 @@ func FindPages(c *gin.Context) {
 	// Kirim response
 	helpers.PaginateResponse(c, pagesResponse, total, page, limit, baseURL, search, "List Data Pages")
 }
+
+// FindPageBySlug - Menampilkan detail halaman berdasarkan Slug
+func FindPageBySlug(c *gin.Context) {
+	// Ambil parameter slug
+	slug := c.Param("slug")
+
+	// Inisialisasi page
+	var page models.Page
+
+	// Cari data halaman berdasarkan ID
+	if err := database.DB.Preload("User").First(&page, "slug = ?", slug).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Page not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim respon sukses dengan data
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Page found",
+		Data: structs.PagetWithRelationResponse{
+			Id:      page.Id,
+			Title:   page.Title,
+			Slug:    page.Slug,
+			Content: page.Content,
+			User: structs.UserSimpleResponse{
+				ID:   page.User.Id,
+				Name: page.User.Name,
+			},
+			CreatedAt: page.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: page.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
