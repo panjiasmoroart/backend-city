@@ -108,6 +108,9 @@ func SetupRouter() *gin.Engine {
 		// Page routes
 		public.GET("/pages", publicController.FindPages)
 		public.GET("/pages/:slug", publicController.FindPageBySlug)
+
+		// Product routes
+		public.GET("/products", publicController.FindProducts)
 	}
 
 	return router
