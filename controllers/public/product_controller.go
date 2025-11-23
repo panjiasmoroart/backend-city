@@ -110,3 +110,50 @@ func FindProductBySlug(c *gin.Context) {
 		},
 	})
 }
+
+// FindProductsHome - Ambil 6 produk terbaru
+func FindProductsHome(c *gin.Context) {
+	// Inisialisasi slice
+	var products []models.Product
+
+	// Ambil maksimal 6 produk terbaru dengan preload User
+	err := database.DB.Preload("User").
+		Order("id desc").Limit(6).Find(&products).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to fetch products",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Mapping manual ke struct response
+	productsResponse := []structs.ProductWithRelationResponse{}
+	for _, product := range products {
+		productsResponse = append(productsResponse, structs.ProductWithRelationResponse{
+			Id:      product.Id,
+			Title:   product.Title,
+			Slug:    product.Slug,
+			Image:   product.Image,
+			Owner:   product.Owner,
+			Price:   product.Price,
+			Address: product.Address,
+			Phone:   product.Phone,
+			User: structs.UserSimpleResponse{
+				ID:   product.User.Id,
+				Name: product.User.Name,
+			},
+			CreatedAt: product.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: product.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	// Kirim response
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "List Data Products Home",
+		Data:    productsResponse,
+	})
+}
