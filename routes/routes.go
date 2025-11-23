@@ -111,6 +111,7 @@ func SetupRouter() *gin.Engine {
 
 		// Product routes
 		public.GET("/products", publicController.FindProducts)
+		public.GET("/products/:slug", publicController.FindProductBySlug)
 	}
 
 	return router

@@ -68,3 +68,45 @@ func FindProducts(c *gin.Context) {
 	// Kirim response
 	helpers.PaginateResponse(c, productsResponse, total, page, limit, baseURL, search, "List Data Products")
 }
+
+// FindProductBySlug - Ambil 1 produk berdasarkan Slug
+func FindProductBySlug(c *gin.Context) {
+	// Ambil parameter slug
+	slug := c.Param("slug")
+
+	// Inisialisasi produk
+	var product models.Product
+
+	// Cari produk
+	if err := database.DB.Preload("User").First(&product, "slug = ?", slug).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Product not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim data produk
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Product found",
+		Data: structs.ProductWithRelationResponse{
+			Id:      product.Id,
+			Title:   product.Title,
+			Slug:    product.Slug,
+			Content: product.Content,
+			Image:   product.Image,
+			Owner:   product.Owner,
+			Price:   product.Price,
+			Address: product.Address,
+			Phone:   product.Phone,
+			User: structs.UserSimpleResponse{
+				ID:   product.User.Id,
+				Name: product.User.Name,
+			},
+			CreatedAt: product.CreatedAt.Format("2006-01-02 15:04:05"),
+			UpdatedAt: product.UpdatedAt.Format("2006-01-02 15:04:05"),
+		},
+	})
+}
