@@ -42,3 +42,29 @@ func FindAparaturs(c *gin.Context) {
 	// Kirim response dalam format paginasi
 	helpers.PaginateResponse(c, aparaturs, total, page, limit, baseURL, search, "List Data Aparaturs")
 }
+
+// Mengambil detail aparatur berdasarkan ID
+func FindAparaturById(c *gin.Context) {
+	// Ambil parameter ID
+	id := c.Param("id")
+
+	// Inisialisasi post
+	var aparatur models.Aparatur
+
+	// Cari post dan preload relasi
+	if err := database.DB.First(&aparatur, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, structs.ErrorResponse{
+			Success: false,
+			Message: "Aparatur not found",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim data post
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "Post found",
+		Data:    aparatur,
+	})
+}
