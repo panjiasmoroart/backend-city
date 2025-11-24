@@ -136,5 +136,8 @@ func SetupRouter() *gin.Engine {
 		public.GET("/aparaturs_home", publicController.FindAparatursHome)
 	}
 
+	// Serve static files from public/uploads
+	router.Static("/uploads", "./public/uploads")
+
 	return router
 }
