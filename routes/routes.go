@@ -6,6 +6,7 @@ import (
 	publicController "backend-city/controllers/public"
 	"backend-city/middlewares"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,6 +14,14 @@ func SetupRouter() *gin.Engine {
 
 	// Initialize gin
 	router := gin.Default()
+
+	// set up CORS
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:  []string{"*"},
+		AllowMethods:  []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:  []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders: []string{"Content-Length"},
+	}))
 
 	// auth routes (no auth required)
 	auth := router.Group("/api")
