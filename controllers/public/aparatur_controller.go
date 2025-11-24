@@ -68,3 +68,28 @@ func FindAparaturById(c *gin.Context) {
 		Data:    aparatur,
 	})
 }
+
+// FindAparatursHome - Menampilkan 6 data aparatur terbaru
+func FindAparatursHome(c *gin.Context) {
+	// Inisialisasi slice
+	var aparaturs []models.Aparatur
+
+	// Ambil maksimal 5 aparaturs terbaru
+	err := database.DB.Order("id desc").Limit(6).Find(&aparaturs).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, structs.ErrorResponse{
+			Success: false,
+			Message: "Failed to fetch aparaturs",
+			Errors:  helpers.TranslateErrorMessage(err),
+		})
+		return
+	}
+
+	// Kirim response
+	c.JSON(http.StatusOK, structs.SuccessResponse{
+		Success: true,
+		Message: "List Data Aparaturs Home",
+		Data:    aparaturs,
+	})
+}

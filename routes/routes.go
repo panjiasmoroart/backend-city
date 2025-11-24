@@ -124,6 +124,7 @@ func SetupRouter() *gin.Engine {
 		// Aparatur routes
 		public.GET("/aparaturs", publicController.FindAparaturs)
 		public.GET("/aparaturs/:id", publicController.FindAparaturById)
+		public.GET("/aparaturs_home", publicController.FindAparatursHome)
 	}
 
 	return router
