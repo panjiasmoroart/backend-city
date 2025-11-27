@@ -49,6 +49,8 @@ func TranslateErrorMessage(err error) map[string]string {
 			}
 		} else if err == gorm.ErrRecordNotFound {
 			errorsMap["Error"] = "Record not found"
+		} else if strings.Contains(err.Error(), "hashedPassword is not the hash of the given password") {
+			errorsMap["Error"] = "Incorrect Password"
 		}
 	}
 
